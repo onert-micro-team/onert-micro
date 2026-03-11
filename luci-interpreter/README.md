@@ -1,8 +1,8 @@
 # luci-interpreter
 
 `luci-interpreter` is an inference engine for neural networks represented in luci IR.
-See `compiler/luci/lang` directory for details about IR.
-You can find useful infrastructure, like importer/exporter, optimizations in `compiler/luci`.
+See ([`compiler/luci/lang`](https://github.com/Samsung/ONE/tree/master/compiler/luci/lang) directory for details about IR.
+You can find useful infrastructure, like importer/exporter, optimizations in [`compiler/luci`](https://github.com/Samsung/ONE/tree/master/compiler/luci).
 
 `luci-interpreter` provides:
 - Basic inference functionality, input setters and output getters
@@ -10,6 +10,18 @@ You can find useful infrastructure, like importer/exporter, optimizations in `co
 - Customization mechanisms to fit the interpreter to specific platforms, like MCUs
 
 Public interface headers are placed in `luci-interpreter/include/luci_interpreter` directory
+
+## How to build
+
+`luci-interpreter` has its own independent `CMakeLists.txt`
+
+``` bash
+$ cd <path to onert-micro>
+$ mkdir build
+# cd build
+$ cmake ../luci-interpreter
+$ make -j$(nproc) luci_interpreter_micro
+```
 
 ## Basic usage
 
@@ -156,3 +168,13 @@ TBD when it is merged
 ## Further reading
 
 If you want to participate in development, please read `DEVELOPER.md` for SW architecture details.
+
+### Known issues
+-
+-Interpreter uses TensorFlow headers that produces warnings.
+-
+-`Linux` x86 build uses "-isystem" flag to suppress warnings from external sources,
+-but some old arm compilers have issues with it:
+-[bug](https://bugs.launchpad.net/gcc-arm-embedded/+bug/1698539)
+-
+-`-isystem` hack is disabled for MCU build, because of this MCU build is broken if `-Werror` flag is set.

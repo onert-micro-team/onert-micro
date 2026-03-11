@@ -1,21 +1,53 @@
 # onert-micro
 
-`onert-micro`(a.k.a `luci-micro`) is MCU specialized build of luci-interpreter with several benchmark applications.
+`onert-micro` - Ultra Light AI Runtime for inference/training of Neural Networks.
 
-## Contents
+## ✨ Benefits
 
-onert-micro contains cmake infrastructure to build:
-- stand-alone interpreter library
-- benchmark applications using luci interpreter on arm MCUs
+- No need network connectivity (on-device)
+- Local computations
+- Help to preserve user privacy
+- Lower latency
+- Increasing reliability
+- Increasing smart device functionality including **MCU**
 
-## How to build stand alone library
+## ⚡Key Features
 
-Stand-alone library is simply built by `luci_interpreter_micro_arm` target.
-Result library will be placed in  `<ONE root>/build/compiler/luci-micro/standalone_arm/luci-interpreter/src/libluci_interpreter.a`.
+**Supported OS:**
+
+- TizenRT
+- Mbed OS
+- Ubuntu
+
+**Supported Architectures:**
+
+- X86-64
+- ARM Cortex-R (ARMv7-R)
+- ARM Cortex-M (ARMv7E-M,ARMv8-M)
+- ARM64
+
+**On-device training for MCU**
+
+**Quantized kernels support**
+
+**CMSIS-NN support**
+
+
+**onert-micro contains cmake infrastructure to build:**
+- `onert_micro_interpreter` - Main interpreter library for on-device inference
+- `onert_micro_training_interpreter` - Interpreter library with on-device training feature
+- `onert_micro_eval_driver` - Evaluation driver tool for running inference
+- `onert_micro_training_eval_driver` - Training evaluation driver
+- `train_config_tool` - Training configuration tool
+- previuos version based on luci-interpreter(`./luci-interpreter`)
+
+## 🛠️ How to build stand alone library
+
+Stand-alone library is simply built by `onert_micro_arm` target.
+Result library will be placed in  `./build/standalone_arm/onert-micro/src/libonert_micro_interpreter.a`.
 
 ### Prerequisites
 
-- Everything you need for ONE project: see [how-to-build-compiler.md](../../docs/howto/how-to-build-compiler.md)
 - arm-none-eabi-gcc and arm-none-eabi-g++ compilers
 
 To install needed arm compilers on ubuntu:
@@ -26,29 +58,47 @@ $ sudo apt-get install gcc-arm-none-eabi
 **cmake build**
 
 ``` bash
-$ cd <path to ONE>
-$ mkdir build
-# cd build
-$ cmake ../infra/onert-micro
-$ make -j$(nproc) luci_interpreter_micro_arm
+sudo apt-get install cmake gcc g++
+```
+``` bash
+$ sudo apt-get install \
+build-essential \
+cmake \
+git \
+libboost-all-dev \
+libgflags-dev \
+libgoogle-glog-dev \
+libatlas-base-dev \
+libhdf5-dev \
+libprotobuf-dev \
+protobuf-compiler \
+wget \
+zip \
+unzip \
+python3 \
+python3-pip \
+python3-venv \
+python3-dev \
+hdf5-tools \
+curl
 ```
 
-### Known issues
+``` bash
+$ cd <path to onert-micro>
+$ mkdir build
+# cd build
+$ cmake ..
+$ make -j$(nproc) onert_micro_arm
+```
 
-Interpreter uses TensorFlow headers that produces warnings.
-
-`Linux` x86 build uses "-isystem" flag to suppress warnings from external sources,
-but some old arm compilers have issues with it:
-[bug](https://bugs.launchpad.net/gcc-arm-embedded/+bug/1698539)
-
-`-isystem` hack is disabled for MCU build, because of this MCU build is broken if `-Werror` flag is set.
-
-## How to use
+## 🚀 How to use
 
 ### Convert tflite model to circle model
 
-To inference with tflite model, you need to convert it to circle model format(https://github.com/Samsung/ONE/blob/master/res/CircleSchema/0.4/circle_schema.fbs).
-Please refer to `tflite2circle` tool(https://github.com/Samsung/ONE/tree/master/compiler/tflite2circle) for this purpose.
+For preparation of `circle` file you need to use [ONE Toolchain](https://github.com/Samsung/ONE)
+Everything you need for ONE project: see [how-to-build-compiler.md](https://github.com/Samsung/ONE/blob/master/docs/howto/how-to-build-compiler.md)
+To inference with tflite model, you need to convert it to circle model format(../res/CircleSchema/0.8/circle_schema.fbs).
+Please refer to `tflite2circle` tool ([ONE/compiler/tflite2circle](https://github.com/Samsung/ONE/tree/master/compiler/tflite2circle)) for this purpose.
 
 ### Convert to c array model
 
@@ -70,6 +120,8 @@ unsigned int model_circle_len = 1004;
 
 ### API
 
+Working example of API usage can be found by the link: [Example](eval-driver/Driver.cpp)
+
 Once you have c array model, you are ready to use onert-micro.
 
 To run a model with onert-micro, follow the instruction:
@@ -77,7 +129,7 @@ To run a model with onert-micro, follow the instruction:
 1. Include onert-micro header
 
 ``` cpp
-#include <luci_interpreter/Interpreter.h>
+  #include "OMInterpreter.h"
 ```
 
 2. Create interpreter instance
@@ -85,9 +137,14 @@ To run a model with onert-micro, follow the instruction:
 onert-micro interpreter expects model as c array as mentioned in [Previous Section](#convert-to-c-array-model).
 
 ``` cpp
-#include "model.h"
+  #include "model.h"
 
-luci_interpreter::Interpreter interpreter(model_circle, true);
+  luci_interpreter::Interpreter interpreter(model_circle, true);
+  // Create interpreter.
+  onert_micro::OMInterpreter interpreter;
+  onert_micro::OMConfig config;
+  interpreter.importModel(model_circle.data(), config);
+
 ```
 
 3. Feed input data
@@ -95,24 +152,28 @@ luci_interpreter::Interpreter interpreter(model_circle, true);
 To feed input data into interpreter, we need to do two steps: 1) allocate input tensors and 2) copy input into input tensors.
 
 ``` cpp
+    interpreter.reset();
+    interpreter.allocateInputs();
+
     for (int32_t i = 0; i < num_inputs; i++)
     {
-      auto input_data = reinterpret_cast<char *>(interpreter.allocateInputTensor(i));
-      readDataFromFile(std::string(input_prefix) + std::to_string(i), input_data,
-                       interpreter.getInputDataSizeByIndex(i));
+      auto input_data = reinterpret_cast<char *>(interpreter.getInputDataAt(i));
+      size_t input_size = interpreter.getInputSizeAt(i);
+      readDataFromFile(input_prefix + std::to_string(i), input_data, input_size);
     }
 ```
 
 4. Do inference
 
 ``` cpp
-    interpreter.interpret();
+    // Do inference.
+    interpreter.run(config);
 ```
 
 5. Get output data
 
 ``` cpp
-    auto data = interpreter.readOutputTensor(i);
+    auto data = interpreter.getOutputDataAt(i);
 ```
 
 
@@ -125,4 +186,5 @@ onert-micro provides compile flags to generate reduced-size binary.
 - `DIS_DYN_SHAPES` : Flag for Disabling Dynamic Shape Support
 
 Also, you can build onert-micro library only with kernels in target models.
-For this, please remove all the kernels from [KernelsToBuild.lst](./luci-interpreter/pal/mcu/KernelsToBuild.lst) except kernels in your target model.
+For this, please remove all the kernels from [KernelsToBuild.lst](./onert-micro/include/pal/mcu/KernelsToBuild.lst) except kernels in your target model.
+

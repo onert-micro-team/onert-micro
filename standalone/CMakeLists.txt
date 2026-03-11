@@ -10,4 +10,4 @@ else()
 endif()
 
 # TODO: fix luci/plan for new luci-micro without luci/IR
-add_subdirectory(${NNAS_PROJECT_SOURCE_DIR}/onert-micro/onert-micro ${CMAKE_CURRENT_BINARY_DIR}/onert-micro)
+add_subdirectory(${NNAS_PROJECT_SOURCE_DIR}/onert-micro ${CMAKE_CURRENT_BINARY_DIR}/onert-micro)

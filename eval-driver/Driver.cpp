@@ -64,7 +64,7 @@ void writeDataToFile(const std::string &filename, const char *data, size_t data_
 /*
  * @brief EvalDriver main
  *
- *        Driver for testing luci-inerpreter
+ *        Driver for testing onert-micro interpreter
  *
  */
 int entry(int argc, char **argv)

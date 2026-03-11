@@ -232,7 +232,11 @@ OMStatus training_configure_tool::runTrainProcessWithCurConfig(
       }
     }
   }
+
+  #ifdef OM_MEMORY_ESTIMATE
   train_result.peak_memory_footprint = train_interpreter.getPeakFootprintMemory();
+  #endif // OM_MEMORY_ESTIMATE
+
   switch (train_data.metrics_to_check_best_config)
   {
     case onert_micro::CROSS_ENTROPY_METRICS:

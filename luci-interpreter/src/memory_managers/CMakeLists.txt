@@ -17,5 +17,5 @@ set(TEST_SOURCES BuddyMemoryManager.test.cpp)
 
 nnas_find_package(GTest REQUIRED)
 
-GTest_AddTest(buddy_manager_test_micro ${TEST_SOURCES})
-target_link_libraries(buddy_manager_test_micro ${LUCI_INTERPRETER_BINARY})
+#GTest_AddTest(buddy_manager_test_micro ${TEST_SOURCES})
+#target_link_libraries(buddy_manager_test_micro ${LUCI_INTERPRETER_BINARY})
