@@ -188,3 +188,6 @@ onert-micro provides compile flags to generate reduced-size binary.
 Also, you can build onert-micro library only with kernels in target models.
 For this, please remove all the kernels from [KernelsToBuild.lst](./onert-micro/include/pal/mcu/KernelsToBuild.lst) except kernels in your target model.
 
+## 📖Documentation 
+
+[Project documentation](https://deepwiki.com/onert-micro-team/onert-micro)
