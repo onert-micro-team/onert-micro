@@ -1,0 +1,59 @@
+exclude: .*/contrib/.*
+# for pre-commit 4.4.0
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: 'v6.0.0'
+    hooks:
+      - name: 'Check file end line'
+        id: end-of-file-fixer
+        # exclude .svg files
+        exclude: \.(svg)$
+      - name: 'Check trailing whitespace'
+        id: trailing-whitespace
+      - name: 'Check executable files'
+        id: check-executables-have-shebangs
+        exclude:
+          (?x)^(
+            .*/__init__.py$
+          )
+
+  - repo: https://github.com/rhysd/actionlint
+    rev: 'v1.7.9'
+    # https://github.com/rhysd/actionlint/blob/v1.7.9/docs/usage.md#pre-commit
+    hooks:
+    - name: 'Check CI workflows with actionlint'
+      id: actionlint
+
+  - repo: https://github.com/google/yapf
+    rev: 'v0.43.0'
+    hooks:
+    - name: 'Check CI Python scripts with yapf'
+      id: yapf
+      types: [file] # override default type check exceptional case
+      files:
+        (?x)^(
+          .*\.py$
+        )
+
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: 'v16.0.6'
+    hooks:
+    - name: 'Check C/C++ code with clang-format'
+      id: clang-format
+      types_or: [file]  # override default type check to cl files
+      files: ((\.c[cl]?)|(\.cpp)|(\.h(pp)?))$
+
+  - repo: local
+    hooks:
+      - name: 'Check copyright headers'
+        id: copyright-check
+        entry: infra/git-hooks/copyright-check.sh
+        language: script
+        pass_filenames: true
+        types: [file]
+        files: \.(c[cl]?|cpp|h(pp)?)$
+        # Ignore 3rd-party code
+        exclude:
+          (?x)^(
+            externals/.*
+          )
